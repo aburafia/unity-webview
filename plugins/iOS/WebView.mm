@@ -98,6 +98,7 @@ extern "C" void UnitySendMessage(const char *, const char *, const char *);
 {
     UIView <WebViewProtocol> *webView;
     NSString *gameObjectName;
+    BOOL isOpenBrowser = true;
 }
 @end
 
@@ -176,6 +177,17 @@ extern "C" void UnitySendMessage(const char *, const char *, const char *);
         UnitySendMessage([gameObjectName UTF8String], "CallFromJS", [[url substringFromIndex:6] UTF8String]);
         return NO;
     } else {
+
+        if(isOpenBrowser){
+            if (navigationType == UIWebViewNavigationTypeLinkClicked ){
+                NSString* scheme = [[request URL] scheme];            
+                if([scheme compare:@"http"] == NSOrderedSame || [scheme compare:@"https"] == NSOrderedSame) {
+                    [[UIApplication sharedApplication] openURL: [request URL]];
+                    return NO;
+                }
+            }
+        }
+
         return YES;
     }
 }
@@ -292,6 +304,12 @@ extern "C" void UnitySendMessage(const char *, const char *, const char *);
     [webView goForward];
 }
 
+- (void)setIsOpenBrowser:(BOOL)value
+{
+    isOpenBrowser = value;
+}
+
+
 @end
 
 extern "C" {
@@ -307,6 +325,7 @@ extern "C" {
     BOOL _CWebViewPlugin_CanGoForward(void *instance);
     void _CWebViewPlugin_GoBack(void *instance);
     void _CWebViewPlugin_GoForward(void *instance);
+    void _CWebViewPlugin_SetIsOpenBrowser(void *instance, BOOL value);
 }
 
 void *_CWebViewPlugin_Init(const char *gameObjectName, BOOL transparent, BOOL enableWKWebView)
@@ -381,4 +400,10 @@ void _CWebViewPlugin_GoForward(void *instance)
 {
     CWebViewPlugin *webViewPlugin = (__bridge CWebViewPlugin *)instance;
     [webViewPlugin goForward];
+}
+
+void _CWebViewPlugin_SetIsOpenBrowser(void *instance, BOOL value)
+{
+    CWebViewPlugin *webViewPlugin = (__bridge CWebViewPlugin *)instance;
+    [webViewPlugin setIsOpenBrowser:value];
 }

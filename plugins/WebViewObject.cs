@@ -49,6 +49,7 @@ public class WebViewObject : MonoBehaviour
     Callback onError;
     Callback onLoaded;
     bool visibility;
+	bool isOpenBrowser = true;
 #if UNITY_WEBPLAYER
 #elif UNITY_EDITOR || UNITY_STANDALONE_OSX
     IntPtr webView;
@@ -62,7 +63,7 @@ public class WebViewObject : MonoBehaviour
     AndroidJavaObject webView;
     
     bool mIsKeyboardVisible = false;
-    
+
     /// Called from Java native plugin to set when the keyboard is opened
     public void SetKeyboardVisible(string pIsVisible)
     {
@@ -128,6 +129,9 @@ public class WebViewObject : MonoBehaviour
     private static extern void _CWebViewPlugin_SetCurrentInstance(IntPtr instance);
     [DllImport("WebView")]
     private static extern IntPtr GetRenderEventFunc();
+	[DllImport("WebView")]
+	private static extern void _CWebViewPlugin_SetIsOpenBrowser(
+	IntPtr instance, bool value);
 #elif UNITY_IPHONE
     [DllImport("__Internal")]
     private static extern IntPtr _CWebViewPlugin_Init(string gameObject, bool transparent, bool enableWKWebView);
@@ -160,6 +164,9 @@ public class WebViewObject : MonoBehaviour
     [DllImport("__Internal")]
     private static extern void _CWebViewPlugin_SetFrame(
         IntPtr instance, int x , int y , int width , int height);
+    [DllImport("WebView")]
+    private static extern void _CWebViewPlugin_SetIsOpenBrowser(
+        IntPtr instance, bool value);
 #endif
 
     public void Init(Callback cb = null, bool transparent = false, string ua = @"Mozilla/5.0 (iPhone; CPU iPhone OS 7_1_2 like Mac OS X) AppleWebKit/537.51.2 (KHTML, like Gecko) Version/7.0 Mobile/11D257 Safari/9537.53", Callback err = null, Callback ld = null, bool enableWKWebView = false)
@@ -402,6 +409,30 @@ public class WebViewObject : MonoBehaviour
             onJS(message);
         }
     }
+
+    public void SetIsOpenBrowser(bool v)
+    {
+
+#if UNITY_WEBPLAYER
+#elif UNITY_EDITOR || UNITY_STANDALONE_OSX || UNITY_IPHONE
+        if (webView == IntPtr.Zero)
+            return;
+        _CWebViewPlugin_SetIsOpenBrowser(webView, v);
+#elif UNITY_ANDROID
+        if (webView == null)
+            return;
+        webView.Call("SetIsOpenBrowser", v);
+#else
+#endif
+        isOpenBrowser = v;
+    }
+
+    public bool GetIsOpenBrowser()
+    {
+        return isOpenBrowser;
+    }
+
+
 
 #if UNITY_WEBPLAYER
 #elif UNITY_EDITOR || UNITY_STANDALONE_OSX

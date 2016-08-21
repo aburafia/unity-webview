@@ -40,6 +40,9 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
+import java.util.List;
 import com.unity3d.player.UnityPlayer;
 
 class CWebViewPluginInterface {
@@ -72,6 +75,7 @@ public class CWebViewPlugin {
     private CWebViewPluginInterface mWebViewPlugin;
     private boolean canGoBack;
     private boolean canGoForward;
+    private boolean isOpenBrowser = true;
 
     public CWebViewPlugin() {
     }
@@ -128,6 +132,12 @@ public class CWebViewPlugin {
                     if (url.startsWith("http://") || url.startsWith("https://")
                         || url.startsWith("file://") || url.startsWith("javascript:")) {
                         // Let webview handle the URL
+
+                        if (isOpenBrowser){
+                            blowserJump(view.getContext(), url);
+                            return true;
+                        }
+
                         return false;
                     } else if (url.startsWith("unity:")) {
                         String message = url.substring(6);
@@ -138,6 +148,44 @@ public class CWebViewPlugin {
                     view.getContext().startActivity(intent);
                     return true;
                 }
+
+                public void blowserJump(Context ctx, String url)
+                {
+
+                    //標準のブラウザ
+                    Intent intent = new Intent("android.intent.action.VIEW", Uri.parse(url));
+                    intent.setClassName("com.android.browser", "com.android.browser.BrowserActivity");
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    if (isIntentAvailable(ctx, intent)){
+                        ctx.startActivity(intent);
+                        return;
+                    }
+
+                    //Chrome
+                    intent = new Intent("android.intent.action.VIEW", Uri.parse(url));
+                    intent.setClassName("com.android.chrome", "com.google.android.apps.chrome.Main");
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    if (isIntentAvailable(ctx, intent)){
+                        ctx.startActivity(intent);
+                        return;
+                    }
+
+                    //不明androidのランチャーに任せる
+                    intent = new Intent("android.intent.action.VIEW", Uri.parse(url));
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+
+                    ctx.startActivity(intent);
+                }
+
+                public boolean isIntentAvailable(Context ctx, Intent intent)
+                {
+                    PackageManager pm = ctx.getPackageManager();
+                    if (intent != null){
+                        List<ResolveInfo> list = pm.queryIntentActivities(intent, 65536);
+                        return list.size() > 0;
+                    }
+                    return false;
+                }                
             });
             webView.addJavascriptInterface(mWebViewPlugin , "Unity");
 
@@ -278,5 +326,10 @@ public class CWebViewPlugin {
                 mWebView.setVisibility(View.GONE);
             }
         }});
+    }
+
+      public void SetIsOpenBrowser(boolean b)
+    {
+        isOpenBrowser = b;
     }
 }
