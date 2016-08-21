@@ -98,7 +98,7 @@ extern "C" void UnitySendMessage(const char *, const char *, const char *);
 {
     UIView <WebViewProtocol> *webView;
     NSString *gameObjectName;
-    BOOL isOpenBrowser = true;
+    BOOL isOpenBrowser;
 }
 @end
 
@@ -125,6 +125,8 @@ extern "C" void UnitySendMessage(const char *, const char *, const char *);
     [view addSubview:webView];
     gameObjectName = [NSString stringWithUTF8String:gameObjectName_];
 
+    isOpenBrowser = true;
+    
     return self;
 }
 
